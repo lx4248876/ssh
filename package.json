@@ -1,13 +1,81 @@
 {
-  "name": "electron-sftp-client",
+  "name": "ssh-sftp-client",
   "version": "1.0.0",
+  "description": "SSH SFTP Client",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --debug"
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.yourcompany.sshsftpclient",
+    "productName": "SSH SFTP Client",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.icns"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/icon.png"
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
+      "!**/node_modules/*/{LICENSE,license,License}",
+      "!**/*.{md,MD,markdown,txt}"
+    ],
+    "asar": true,
+    "afterPack": "./build/afterPack.js",
+    "compression": "maximum",
+    "extraResources": [
+      {
+        "from": "node_modules/7zip-bin/${os}",
+        "to": "7zip-bin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "${productName}"
+    },
+    "asarUnpack": [
+      "node_modules/7zip-bin/**/*"
+    ]
+  },
+  "author": "Your Name",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^22.14.13"
   },
   "dependencies": {
-    "electron": "^28.0.0",
     "electron-store": "^8.1.0",
     "ssh2-sftp-client": "^9.1.0",
     "xterm": "^5.3.0",

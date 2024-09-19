@@ -132,15 +132,25 @@
 
         /* 可拖拽分隔线 */
         .resizer {
-            width: 5px;
             background: #555;
-            cursor: col-resize;
+            opacity: 0.5;
+            z-index: 1;
+            box-sizing: border-box;
+            background-clip: padding-box;
         }
 
-        .resizer-horizontal {
-            height: 5px;
-            background: #555;
+        .vertical-resizer {
+            cursor: col-resize;
+            width: 5px;
+        }
+
+        .horizontal-resizer {
             cursor: row-resize;
+            height: 5px;
+        }
+
+        .resizer:hover {
+            opacity: 1;
         }
 
         .path-container {
@@ -299,7 +309,7 @@
                 <input class="search-input" id="local-search" placeholder="搜索本地文件" type="text">
                 <div class="file-list" id="local-files"></div>
             </div>
-            <div class="resizer" id="vertical-resizer"></div>
+            <div class="resizer vertical-resizer" id="vertical-resizer"></div>
             <div class="file-list-container">
                 <div class="path-container">
                     <input class="path-input" id="remote-path" placeholder="远程路径" type="text">
@@ -309,7 +319,7 @@
                 <div class="file-list" id="remote-files"></div>
             </div>
         </div>
-        <div class="resizer-horizontal" id="horizontal-resizer"></div>
+        <div class="resizer horizontal-resizer" id="horizontal-resizer"></div>
         <div id="terminal"></div>
     </div>
 </div>

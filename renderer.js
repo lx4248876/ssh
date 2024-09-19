@@ -268,36 +268,37 @@ function setupResizers() {
     let isResizing = false;
     let currentResizer = null;
 
-    function handleResize(e) {
-        if (!isResizing) return;
-
-        if (currentResizer === verticalResizer) {
-            const containerWidth = leftPane.parentElement.clientWidth;
-            const percentage = (e.clientX / containerWidth) * 100;
-            leftPane.style.width = `${percentage}%`;
-            rightPane.style.width = `${100 - percentage}%`;
-        } else if (currentResizer === horizontalResizer) {
-            const containerHeight = topPane.parentElement.clientHeight;
-            const percentage = (e.clientY / containerHeight) * 100;
-            topPane.style.height = `${percentage}%`;
-            bottomPane.style.height = `${100 - percentage}%`;
-            if (fitAddon) {
-                fitAddon.fit();
-            }
-        }
-    }
-
     function startResize(e) {
         isResizing = true;
         currentResizer = e.target;
-        document.addEventListener('mousemove', handleResize);
+        document.addEventListener('mousemove', resize);
         document.addEventListener('mouseup', stopResize);
+    }
+
+    function resize(e) {
+        if (!isResizing) return;
+
+        if (currentResizer.classList.contains('vertical-resizer')) {
+            const containerWidth = topPane.clientWidth;
+            const percentage = (e.clientX / containerWidth) * 100;
+            leftPane.style.width = `${percentage}%`;
+            rightPane.style.width = `${100 - percentage}%`;
+        } else if (currentResizer.classList.contains('horizontal-resizer')) {
+            const containerHeight = document.querySelector('.main-content').clientHeight;
+            const percentage = (e.clientY / containerHeight) * 100;
+            topPane.style.height = `${percentage}%`;
+            bottomPane.style.height = `${100 - percentage}%`;
+        }
+
+        // 重新调整终端大小
+        if (fitAddon) {
+            fitAddon.fit();
+        }
     }
 
     function stopResize() {
         isResizing = false;
-        currentResizer = null;
-        document.removeEventListener('mousemove', handleResize);
+        document.removeEventListener('mousemove', resize);
         document.removeEventListener('mouseup', stopResize);
     }
 
@@ -786,3 +787,9 @@ function filterFiles(elementId, searchTerm) {
         }
     }
 }
+
+window.addEventListener('resize', () => {
+    if (fitAddon) {
+        fitAddon.fit();
+    }
+});
