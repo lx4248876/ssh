@@ -356,6 +356,13 @@ function displayFiles(files, elementId, currentPath) {
         item.addEventListener('click', () => handleFileClick(file, elementId));
         item.addEventListener('dblclick', () => handleFileDblClick(file, elementId));
         item.addEventListener('contextmenu', (e) => handleContextMenu(e, file, elementId));
+
+        // 添加拖拽事件
+        item.draggable = true;
+        item.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', file.name);
+        });
+
         fileList.appendChild(item);
     });
 }
@@ -389,9 +396,10 @@ async function handleFileDblClick(file, sourceId) {
     }
 }
 
-async function uploadFile(file, useSudo = false) {
+async function uploadFile(file, useSudo = false, draggedFile = null) {
     try {
-        const result = await window.sftp.put(`${localCurrentPath}/${file.name}`, `${remoteCurrentPath}/${file.name}`, useSudo);
+        const sourcePath = draggedFile ? draggedFile.path : `${localCurrentPath}/${file.name}`;
+        const result = await window.sftp.put(sourcePath, `${remoteCurrentPath}/${file.name}`, useSudo);
         if (result.success) {
             term.writeln(`上传成功: ${file.name}`);
             loadRemoteFiles(remoteCurrentPath);
@@ -399,7 +407,7 @@ async function uploadFile(file, useSudo = false) {
             if (result.error.includes('Permission denied') && !useSudo) {
                 const useRoot = await showConfirmDialog('权限不足', '是否使用 sudo 权限上传？');
                 if (useRoot) {
-                    await uploadFile(file, true);
+                    await uploadFile(file, true, draggedFile);
                 } else {
                     term.writeln(`上传失败: ${file.name} - 权限不足`);
                 }
@@ -721,30 +729,32 @@ function setupDragAndDrop() {
     const localFiles = document.getElementById('local-files');
     const remoteFiles = document.getElementById('remote-files');
 
-    localFiles.addEventListener('dragover', (e) => {
+    // 为整个窗口添加拖拽事件监听
+    document.addEventListener('dragover', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         e.dataTransfer.dropEffect = 'copy';
     });
 
-    localFiles.addEventListener('drop', async (e) => {
+    document.addEventListener('drop', async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         const files = e.dataTransfer.files;
         for (const file of files) {
-            await uploadFile({name: file.name, type: 'f'}, false, file);
+            await uploadFile({name: file.name, path: file.path}, false, file);
         }
     });
 
-    remoteFiles.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
+    // 为本地文件列表添加拖拽事件
+    localFiles.addEventListener('dragstart', (e) => {
+        const fileName = e.target.textContent.trim();
+        e.dataTransfer.setData('text/plain', fileName);
     });
 
-    remoteFiles.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        for (const file of files) {
-            await downloadFile({name: file.name, type: 'f'}, false);
-        }
+    // 为远程文件列表添加拖拽事件
+    remoteFiles.addEventListener('dragstart', (e) => {
+        const fileName = e.target.textContent.trim();
+        e.dataTransfer.setData('text/plain', fileName);
     });
 }
 

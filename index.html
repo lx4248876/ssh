@@ -23,7 +23,7 @@
         }
 
         .connection-bar {
-            padding: 10px;
+            padding: 5px;
             background-color: #1a1a1a;
             display: flex;
             align-items: center;
@@ -146,14 +146,16 @@
         .path-container {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
+            margin: 5px;
         }
 
         .path-input {
             flex-grow: 1;
             margin-right: 5px;
-            height: 28px; /* 确保输入框和按钮高度一致 */
-            box-sizing: border-box; /* 确保padding不会增加总高度 */
+            height: 28px;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 0;
         }
 
         .back-button {
@@ -162,9 +164,9 @@
             border: none;
             padding: 5px 10px;
             cursor: pointer;
-            height: 28px; /* 确保按钮和输入框高度一致 */
-            line-height: 18px; /* 调整文字垂直居中 */
-            box-sizing: border-box; /* 确保padding不会增加总高度 */
+            height: 28px;
+            line-height: 18px;
+            box-sizing: border-box;
         }
 
         .back-button:hover {
@@ -199,6 +201,9 @@
             font-size: 16px;
             cursor: pointer;
             padding: 5px;
+            height: 28px;
+            line-height: 18px;
+            box-sizing: border-box;
         }
 
         .icon-button:hover {
