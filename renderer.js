@@ -6,6 +6,7 @@ let fitAddon;
 let fontSize = 14; // 默认字体大小
 let isConnected = false; // 跟踪连接状态
 let sshDataListener = null;
+let hoveredFile = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     console.log('DOMContentLoaded event fired');
@@ -14,8 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadSavedConnections();
     loadLocalFiles(localCurrentPath);
     setupPathInputs();
-    setupResizers();
-    console.log('setupResizers called');
+    setupResizes();
     setupBackButtons();
     setupDesktopButton();
     setupContextMenu();
@@ -27,6 +27,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             disconnect();
         } else {
             connect();
+        }
+    });
+
+    // 添加全局键盘事件监听
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete' && hoveredFile) {
+            handleDelete(hoveredFile.file, hoveredFile.elementId);
         }
     });
 });
@@ -259,7 +266,7 @@ function setupPathInputs() {
     });
 }
 
-function setupResizers() {
+function setupResizes() {
     const verticalResizer = document.getElementById('vertical-resizer');
     const horizontalResizer = document.getElementById('horizontal-resizer');
     const leftPane = document.querySelector('.file-list-container');
@@ -403,6 +410,14 @@ function displayFiles(files, elementId, currentPath) {
         item.addEventListener('dblclick', () => handleFileDblClick(file, elementId));
         item.addEventListener('contextmenu', (e) => handleContextMenu(e, file, elementId));
 
+        // 添加鼠标进入和离开事件
+        item.addEventListener('mouseenter', () => {
+            hoveredFile = {file, elementId};
+        });
+        item.addEventListener('mouseleave', () => {
+            hoveredFile = null;
+        });
+
         // 添加拖拽事件
         item.draggable = true;
         item.addEventListener('dragstart', (e) => {
@@ -419,6 +434,36 @@ function handleFileClick(file, sourceId) {
     const fileItems = document.querySelectorAll(`#${sourceId} .file-item`);
     fileItems.forEach(item => item.classList.remove('selected'));
     event.currentTarget.classList.add('selected');
+}
+
+// 添加这个新函数
+async function handleDelete(file, sourceId) {
+    const isLocal = sourceId === 'local-files';
+    const isDirectory = file.type === 'd';
+    const confirmMessage = `确定要删除${isLocal ? '本地' : '远程'}${isDirectory ? '文件夹' : '文件'} "${file.name}" 吗？`;
+    const confirmed = await showConfirmDialog('确认删除', confirmMessage);
+
+    if (confirmed) {
+        try {
+            const path = `${isLocal ? localCurrentPath : remoteCurrentPath}/${file.name}`;
+            const result = isLocal
+                ? await window.sftp.deleteLocal(path, isDirectory)
+                : await window.sftp.deleteRemote(path, isDirectory);
+
+            if (result.success) {
+                term.writeln(`删除成功: ${file.name}`);
+                if (isLocal) {
+                    loadLocalFiles(localCurrentPath);
+                } else {
+                    loadRemoteFiles(remoteCurrentPath);
+                }
+            } else {
+                term.writeln(`删除失败: ${file.name} - ${result.error}`);
+            }
+        } catch (error) {
+            term.writeln(`删除失败: ${file.name} - ${error}`);
+        }
+    }
 }
 
 async function handleFileDblClick(file, sourceId) {
@@ -515,18 +560,32 @@ function showConfirmDialog(title, message) {
         `;
         document.body.appendChild(dialog);
 
-        document.getElementById('confirm-yes').addEventListener('click', () => {
+        function handleConfirm() {
             if (document.body.contains(dialog)) {
                 document.body.removeChild(dialog);
             }
             resolve(true);
-        });
+        }
 
-        document.getElementById('confirm-no').addEventListener('click', () => {
+        function handleCancel() {
             if (document.body.contains(dialog)) {
                 document.body.removeChild(dialog);
             }
             resolve(false);
+        }
+
+        document.getElementById('confirm-yes').addEventListener('click', handleConfirm);
+        document.getElementById('confirm-no').addEventListener('click', handleCancel);
+
+        // 添加键盘事件监听
+        document.addEventListener('keydown', function onKeyDown(e) {
+            if (e.key === 'Enter') {
+                handleConfirm();
+            } else if (e.key === 'Escape') {
+                handleCancel();
+            }
+            // 移除事件监听器
+            document.removeEventListener('keydown', onKeyDown);
         });
     });
 }
