@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>SFTP 客户端</title>
+    <link href="node_modules/xterm/css/xterm.css" rel="stylesheet"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: monospace;
+            background-color: #000;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .connection-bar {
+            padding: 10px;
+            background-color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .connection-bar > * {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        .connection-bar input, .connection-bar select {
+            flex: 1;
+        }
+
+        #connect {
+            flex: 0 0 auto;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 50px);
+        }
+
+        .file-lists {
+            display: flex;
+            flex: 1;
+            min-height: 200px;
+        }
+
+        .file-list-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .file-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #333;
+        }
+
+        .file-item {
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .file-item:hover {
+            background-color: #333;
+        }
+
+        .file-item i {
+            margin-right: 5px;
+        }
+
+        #terminal {
+            flex: 1;
+            padding: 10px;
+            min-height: 100px;
+            overflow: auto;
+        }
+
+        input, select, button {
+            background-color: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 5px;
+            margin-right: 5px;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #444;
+        }
+
+        .path-input {
+            width: calc(100% - 10px);
+            margin-bottom: 10px;
+        }
+
+        /* 美化滚动条 */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* 可拖拽分隔线 */
+        .resizer {
+            width: 5px;
+            background: #555;
+            cursor: col-resize;
+        }
+
+        .resizer-horizontal {
+            height: 5px;
+            background: #555;
+            cursor: row-resize;
+        }
+
+        .path-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .path-input {
+            flex-grow: 1;
+            margin-right: 5px;
+            height: 28px; /* 确保输入框和按钮高度一致 */
+            box-sizing: border-box; /* 确保padding不会增加总高度 */
+        }
+
+        .back-button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            height: 28px; /* 确保按钮和输入框高度一致 */
+            line-height: 18px; /* 调整文字垂直居中 */
+            box-sizing: border-box; /* 确保padding不会增加总高度 */
+        }
+
+        .back-button:hover {
+            background-color: #444;
+        }
+
+        .file-actions {
+            display: none;
+        }
+
+        .context-menu {
+            position: absolute;
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            padding: 5px 0;
+            z-index: 1000;
+        }
+
+        .context-menu-item {
+            padding: 5px 20px;
+            cursor: pointer;
+        }
+
+        .context-menu-item:hover {
+            background-color: #333;
+        }
+
+        .icon-button {
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .icon-button:hover {
+            color: #ddd;
+        }
+
+        .select-wrapper {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+
+        .select-wrapper select {
+            flex: 1;
+            margin-right: 5px;
+        }
+
+        #delete-connection {
+            background: none;
+            border: none;
+            color: #ff4d4d;
+            cursor: pointer;
+            padding: 5px;
+            font-size: 16px;
+        }
+
+        #delete-connection:hover {
+            color: #ff0000;
+        }
+
+        #saved-connections {
+            position: relative;
+            padding-right: 25px; /* 为删除图标留出空间 */
+        }
+
+        .delete-connection {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #ff4d4d;
+            font-size: 14px;
+        }
+
+        .delete-connection:hover {
+            color: #ff0000;
+        }
+
+        #terminal {
+            font-family: 'Courier New', Courier, monospace;
+            line-height: 1.2;
+            padding: 10px;
+        }
+
+        .terminal-prompt {
+            color: #4CAF50;
+        }
+
+        .terminal-output {
+            color: #FFFFFF;
+        }
+
+        :root {
+            --xterm-font-size: 14px;
+        }
+
+        .xterm-text-layer {
+            font-size: var(--xterm-font-size);
+        }
+    </style>
+
+</head>
+<body>
+<div class="container">
+    <div class="connection-bar">
+        <select id="saved-connections"></select>
+        <input id="connection-name" placeholder="连接名称">
+        <input id="host" placeholder="主机">
+        <input id="port" placeholder="端口" value="22">
+        <input id="username" placeholder="用户名">
+        <input id="password" placeholder="密码" type="password">
+        <button id="connect">连接</button>
+    </div>
+    <div class="main-content">
+        <div class="file-lists">
+            <div class="file-list-container">
+                <div class="path-container">
+                    <input class="path-input" id="local-path" placeholder="本地路径" type="text">
+                    <button class="back-button" id="local-back">⬆</button>
+                    <button class="icon-button" id="local-desktop"><i class="fas fa-desktop"></i></button>
+                </div>
+                <input class="search-input" id="local-search" placeholder="搜索本地文件" type="text">
+                <div class="file-list" id="local-files"></div>
+            </div>
+            <div class="resizer" id="vertical-resizer"></div>
+            <div class="file-list-container">
+                <div class="path-container">
+                    <input class="path-input" id="remote-path" placeholder="远程路径" type="text">
+                    <button class="back-button" id="remote-back">⬆</button>
+                </div>
+                <input class="search-input" id="remote-search" placeholder="搜索远程文件" type="text">
+                <div class="file-list" id="remote-files"></div>
+            </div>
+        </div>
+        <div class="resizer-horizontal" id="horizontal-resizer"></div>
+        <div id="terminal"></div>
+    </div>
+</div>
+<script src="node_modules/xterm/lib/xterm.js"></script>
+<script src="node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+<script src="renderer.js"></script>
+</body>
+</html>
