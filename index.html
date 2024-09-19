@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>SSH SFTP 客户端</title>
+    <title>lix-SSH/SFTP 客户端</title>
     <link href="node_modules/xterm/css/xterm.css" rel="stylesheet"/>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
     <style>
@@ -47,19 +47,24 @@
             display: flex;
             flex-direction: column;
             height: calc(100vh - 50px);
+            position: relative; /* 添加这行 */
+            overflow: hidden; /* 添加这行 */
         }
 
         .file-lists {
-            display: flex;
             flex: 1;
-            min-height: 200px;
+            min-height: 100px; /* 减小最小高度 */
+            display: flex;
+            position: relative;
+            overflow: hidden; /* 添加这行 */
         }
 
         .file-list-container {
             display: flex;
             flex-direction: column;
-            flex: 1;
             min-width: 200px;
+            overflow: hidden; /* 添加这行 */
+            flex: 1; /* 添加这行 */
         }
 
         .file-list {
@@ -86,9 +91,9 @@
 
         #terminal {
             flex: 1;
-            padding: 10px;
             min-height: 100px;
-            overflow: auto;
+            overflow: hidden; /* 修改为 hidden */
+            position: relative; /* 添加这行 */
         }
 
         input, select, button {
@@ -134,19 +139,46 @@
         .resizer {
             background: #555;
             opacity: 0.5;
-            z-index: 1;
-            box-sizing: border-box;
-            background-clip: padding-box;
+            z-index: 10;
+            position: absolute;
+            transition: opacity 0.3s;
+        }
+
+        .resizer:hover, .resizer:active {
+            opacity: 1;
+        }
+
+        body.resizing .resizer {
+            opacity: 1;
+        }
+
+        body.resizing {
+            cursor: col-resize;
+        }
+
+        body.resizing .file-list-container,
+        body.resizing #terminal {
+            pointer-events: none;
+            user-select: none;
         }
 
         .vertical-resizer {
             cursor: col-resize;
             width: 5px;
+            top: 0;
+            bottom: 0;
+            left: 50%; /* 初始位置在中间 */
+            position: absolute;
         }
 
         .horizontal-resizer {
             cursor: row-resize;
             height: 5px;
+            left: 0;
+            right: 0;
+            background: #555;
+            position: absolute;
+            z-index: 10;
         }
 
         .resizer:hover {
@@ -266,7 +298,7 @@
         #terminal {
             font-family: 'Courier New', Courier, monospace;
             line-height: 1.2;
-            padding: 10px;
+            /* padding: 10px; */
         }
 
         .terminal-prompt {
@@ -283,6 +315,19 @@
 
         .xterm-text-layer {
             font-size: var(--xterm-font-size);
+        }
+    </style>
+
+    <style>
+        /* ... 其他样式 ... */
+        body.resizing {
+            cursor: col-resize;
+        }
+
+        body.resizing .file-list-container,
+        body.resizing #terminal {
+            transition: none;
+            user-select: none;
         }
     </style>
 

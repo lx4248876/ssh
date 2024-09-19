@@ -8,12 +8,14 @@ let isConnected = false; // 跟踪连接状态
 let sshDataListener = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log('DOMContentLoaded event fired');
     localCurrentPath = await window.sftp.getCurrentDirectory();
     initTerminal();
     await loadSavedConnections();
     loadLocalFiles(localCurrentPath);
     setupPathInputs();
     setupResizers();
+    console.log('setupResizers called');
     setupBackButtons();
     setupDesktopButton();
     setupContextMenu();
@@ -264,46 +266,89 @@ function setupResizers() {
     const rightPane = document.querySelector('.file-list-container:last-child');
     const topPane = document.querySelector('.file-lists');
     const bottomPane = document.getElementById('terminal');
+    const mainContent = document.querySelector('.main-content');
 
     let isResizing = false;
     let currentResizer = null;
 
     function startResize(e) {
+        console.log('Resize started');
         isResizing = true;
         currentResizer = e.target;
+        document.body.classList.add('resizing');
         document.addEventListener('mousemove', resize);
         document.addEventListener('mouseup', stopResize);
     }
 
+    let rafId = null;
+
     function resize(e) {
         if (!isResizing) return;
 
-        if (currentResizer.classList.contains('vertical-resizer')) {
-            const containerWidth = topPane.clientWidth;
-            const percentage = (e.clientX / containerWidth) * 100;
-            leftPane.style.width = `${percentage}%`;
-            rightPane.style.width = `${100 - percentage}%`;
-        } else if (currentResizer.classList.contains('horizontal-resizer')) {
-            const containerHeight = document.querySelector('.main-content').clientHeight;
-            const percentage = (e.clientY / containerHeight) * 100;
-            topPane.style.height = `${percentage}%`;
-            bottomPane.style.height = `${100 - percentage}%`;
+        if (rafId) {
+            cancelAnimationFrame(rafId);
         }
 
-        // 重新调整终端大小
-        if (fitAddon) {
-            fitAddon.fit();
-        }
+        rafId = requestAnimationFrame(() => {
+            console.log('Resizing');
+
+            if (currentResizer.classList.contains('vertical-resizer')) {
+                const containerWidth = topPane.clientWidth;
+                let percentage = (e.clientX / containerWidth) * 100;
+                percentage = Math.max(20, Math.min(80, percentage));
+                leftPane.style.flex = `0 0 ${percentage}%`;
+                rightPane.style.flex = `0 0 ${100 - percentage}%`;
+                verticalResizer.style.left = `${percentage}%`;
+            } else if (currentResizer.classList.contains('horizontal-resizer')) {
+                const containerHeight = mainContent.clientHeight;
+                let percentage = (e.clientY / containerHeight) * 100;
+                percentage = Math.max(20, Math.min(80, percentage)); // 限制在 10% 到 90% 之间
+                topPane.style.flex = `1 1 ${percentage}%`;
+                bottomPane.style.flex = `1 1 ${100 - percentage}%`;
+                horizontalResizer.style.top = `${percentage}%`;
+            }
+
+            // 添加安全检查，确保终端高度不为 0
+            if (bottomPane.clientHeight > 0 && fitAddon) {
+                try {
+                    fitAddon.fit();
+                } catch (error) {
+                    console.error('Error fitting terminal:', error);
+                }
+            }
+        });
     }
 
     function stopResize() {
         isResizing = false;
+        document.body.classList.remove('resizing');
         document.removeEventListener('mousemove', resize);
         document.removeEventListener('mouseup', stopResize);
     }
 
     verticalResizer.addEventListener('mousedown', startResize);
     horizontalResizer.addEventListener('mousedown', startResize);
+
+    // 初始化分隔线位置
+    function initializeLayout() {
+        verticalResizer.style.left = '50%';
+        horizontalResizer.style.top = '70%';
+        leftPane.style.flex = '0 0 50%';
+        rightPane.style.flex = '0 0 50%';
+        topPane.style.flex = '1 1 70%';
+        bottomPane.style.flex = '1 1 30%';
+
+        if (bottomPane.clientHeight > 0 && fitAddon) {
+            try {
+                fitAddon.fit();
+            } catch (error) {
+                console.error('Error fitting terminal:', error);
+            }
+        }
+    }
+
+    initializeLayout();
+    window.addEventListener('resize', initializeLayout);
 }
 
 function setupBackButtons() {
