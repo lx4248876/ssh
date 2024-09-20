@@ -339,11 +339,11 @@ function setupResizes() {
     // 初始化分隔线位置
     function initializeLayout() {
         verticalResizer.style.left = '50%';
-        horizontalResizer.style.top = '70%';
+        horizontalResizer.style.top = '50%';
         leftPane.style.flex = '0 0 50%';
         rightPane.style.flex = '0 0 50%';
-        topPane.style.flex = '1 1 70%';
-        bottomPane.style.flex = '1 1 30%';
+        topPane.style.flex = '1 1 50%';
+        bottomPane.style.flex = '1 1 50%';
 
         if (bottomPane.clientHeight > 0 && fitAddon) {
             try {
